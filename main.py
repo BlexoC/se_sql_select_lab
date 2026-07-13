@@ -72,23 +72,25 @@ print(order_details)
 print("----------------End Order Details Data----------------")
 
 
-# STEP 8
-# Sum of rounded total price (priceEach * quantityOrdered) for all orders
-sum_total_price = pd.read_sql("""
-SELECT ROUND(priceEach * quantityOrdered, 2) AS total_price
-FROM orderDetails
-""", conn).sum()
 
-# STEP 9
-# Order date reformatted as day, month, year columns
-df_day_month_year = pd.read_sql("""
-SELECT
-    orderDate,
-    STRFTIME('%d', orderDate) AS day,
-    STRFTIME('%m', orderDate) AS month,
-    STRFTIME('%Y', orderDate) AS year
-FROM orderDetails
-""", conn)
 
+# Step 8: round each line total first, THEN sum
+cur = conn.cursor()
+cur.execute("SELECT SUM(ROUND(priceEach * quantityOrdered)) FROM orderdetails")
+sum_total_price = cur.fetchone()  # a tuple, so sum_total_price[0] works
+ 
+
+# Step 9: split orderDate into day, month, year
+df_day_month_year = pd.read_sql(
+    """
+    SELECT
+        orderNumber,
+        strftime('%d', orderDate) AS day,
+        strftime('%m', orderDate) AS month,
+        strftime('%Y', orderDate) AS year
+    FROM orders
+    """,
+    conn,
+)
 # Close the connection
 conn.close()
